@@ -1,0 +1,210 @@
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity and2cmos is
+generic(d: time);
+port(a, b : in std_logic;
+     y : out std_logic);
+end entity and2cmos;
+
+architecture dataflow of and2cmos is
+begin
+y <= a and b after d;
+end architecture dataflow;
+
+entity xor2cmos is
+generic(d: time);
+port(a, b : in std_logic;
+     y : out std_logic);
+end entity xor2cmos;
+
+architecture dataflow of xor2cmos is
+begin
+y <= a xor b after d;
+end architecture dataflow;
+
+entity or2cmos is
+generic(d: time);
+port(a, b : in std_logic;
+     y : out std_logic);
+end entity or2cmos;
+
+architecture dataflow of or2cmos is
+begin
+y <= a or b after d;
+end architecture dataflow;
+
+entity half_adder is
+generic(dand, dxor : time);
+port(a, b : in std_logic;
+	s, cout : out std_logic);
+end entity half_adder;
+
+architecture struct of half_adder is
+begin
+a0: entity work.and2cmos(dataflow) generic map(d=>dand)
+port map(a=>a, b=>b, y=>cout);
+x0: entity work.xor2cmos(dataflow) generic map(d=>dxor)
+port map(a=>a, b=>b, y=>s);
+end architecture struct;
+
+entity full_adder is
+generic(dand, dxor, dor : time);
+port(a, b, cin: in std_logic;
+	s, cout : out std_logic);
+end entity full_adder;
+
+architecture struct of full_adder is
+signal w0, w1, w2 : std_logic;
+begin
+
+x0: entity work.xor2cmos(dataflow) generic map(d=>dxor)
+port map(a=>a, b=>b, y=>w0);
+
+a0: entity work.and2cmos(dataflow) generic map(d=>dand)
+port map(a=>a, b=>b, y=>w1);
+
+x1: entity work.xor2cmos(dataflow) generic map(d=>dxor)
+port map(a=>w0, b=>cin, y=>s);
+
+a1: entity work.and2cmos(dataflow) generic map(d=>dand)
+port map(a=>w0, b=>cin, y=>w2);
+
+o0: entity work.or2cmos(dataflow) generic map(d=>dor)
+port map(a=>w2, b=>w1, y=>cout);
+
+end architecture struct;
+
+
+entity wallace2 is
+generic(tand, txor, tor : time);
+port(x, y: in std_logic_vector(3 downto 0);
+p: out std_logic_vector(7 downto 0);
+carry_out: out std_logic);
+end entity wallace2;
+
+architecture struct of wallace2 is
+signal w: std_logic_vector(1 to 15);
+signal c: std_logic_vector(1 to 10);
+signal s: std_logic_vector(2 to 10);
+signal m: std_logic_vector(0 to 3);
+begin
+
+
+
+a0: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(0), b=>y(0), y=>p(0));
+a1: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(1), b=>y(0), y=>w(1));
+a2: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(0), b=>y(1), y=>w(2));
+a3: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(2), b=>y(0), y=>w(3));
+a4: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(1), b=>y(1), y=>w(4));
+a5: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(0), b=>y(2), y=>w(5));
+a6: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(3), b=>y(0), y=>w(6));
+a7: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(2), b=>y(1), y=>w(7));
+a8: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(1), b=>y(2), y=>w(8));
+a9: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(0), b=>y(3), y=>w(9));
+a10: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(3), b=>y(1), y=>w(10));
+a11: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(2), b=>y(2), y=>w(11));
+a12: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(1), b=>y(3), y=>w(12));
+a13: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(3), b=>y(2), y=>w(13));
+a14: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(2), b=>y(3), y=>w(14));
+a15: entity work.and2cmos(dataflow) generic map(d=>tand)
+port map(a=>x(3), b=>y(3), y=>w(15));
+
+h0: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>w(1), b=>w(2), s=>p(1), cout=>c(1));
+h1: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>w(13), b=>w(14), s=>s(5), cout=>c(5));
+h2: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>c(1), b=>s(2), s=>p(2), cout=>c(6));
+h3: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>c(3), b=>s(4), s=>s(8), cout=>c(8));
+h4: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>c(4), b=>s(5), s=>s(9), cout=>c(9));
+h5: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>c(5), b=>w(15), s=>s(10), cout=>c(10));
+h6: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>c(6), b=>s(7), s=>p(3), cout=>m(0));
+h7: entity work.half_adder(struct) generic map(dand=>tand, dxor=>txor)
+port map(a=>m(3), b=>c(10), s=>p(7), cout=>carry_out);
+
+f0: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>w(4), b=>w(5), cin=>w(3), s=>s(2), cout=>c(2));
+f1: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>w(8), b=>w(9), cin=>w(7), s=>s(3), cout=>c(3));
+f2: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>w(11), b=>w(12), cin=>w(10), s=>s(4), cout=>c(4));
+f3: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>c(2), b=>s(3), cin=>w(6), s=>s(7), cout=>c(7));
+f4: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>c(7), b=>s(8), cin=>m(0), s=>p(4), cout=>m(1));
+f5: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>c(8), b=>s(9), cin=>m(1), s=>p(5), cout=>m(2));
+f6: entity work.full_adder(struct) generic map(dand=>tand, dxor=>txor, dor=>tor)
+port map(a=>c(9), b=>s(10), cin=>m(2), s=>p(6), cout=>m(3));
+
+end architecture struct;
+
+
+entity mulb is
+port(x, y : in std_logic_vector(3 downto 0);
+p : out std_logic_vector(7 downto 0);
+carry_out: out std_logic);
+end entity mulb;
+
+architecture behav of mulb is
+begin
+process(x, y)
+variable xu, yu: unsigned(3 downto 0);
+variable pu: unsigned(7 downto 0);
+begin
+xu:=unsigned(x);
+yu:=unsigned(y);
+pu:=xu*yu;
+p(0)<= transport std_logic(pu(0)) after 50 ps;
+p(1)<= transport std_logic(pu(1)) after 130 ps;
+p(2)<= transport 'X' after 180 ps;
+p(2)<= transport std_logic(pu(2)) after 290 ps;
+p(3)<= transport 'X' after 210 ps;
+p(3)<= transport std_logic(pu(3)) after 480 ps;
+p(4)<= transport 'X' after 260 ps;
+p(4)<= transport std_logic(pu(4)) after 590 ps;
+p(5)<= transport 'X' after 340 ps;
+p(5)<= transport std_logic(pu(5)) after 700 ps;
+p(6)<= transport 'X' after 290 ps;
+p(6)<= transport std_logic(pu(6)) after 810 ps;
+p(7)<= transport 'X' after 180 ps;
+p(7)<= transport std_logic(pu(7)) after 920 ps;
+carry_out <= transport 'X' after 150 ps;
+carry_out <= transport '0' after 890 ps;
+end process;
+end architecture behav;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
